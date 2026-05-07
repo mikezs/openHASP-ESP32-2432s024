@@ -1,1 +1,12 @@
-{"page":1,"id":10,"w":240,"obj":"label","text":"%hostname%"}
+{"page":0,"id":0,"prev":1,"next":1,"back":1}
+{"page":1,"id":0,"prev":1,"next":1,"back":1,"bg_color":"#101010"}
+{"page":1,"id":1,"obj":"label","x":0,"y":0,"w":240,"h":26,"text":"%hostname%","align":1,"text_color":"#ffffff","bg_color":"#1fa3ec","bg_opa":255,"radius":0,"pad_top":4}
+{"page":1,"id":10,"obj":"obj","x":4,"y":32,"w":232,"h":48,"hidden":true,"bg_color":"#ffaa00","bg_opa":255,"radius":4,"border_width":0}
+{"page":1,"id":11,"obj":"label","x":4,"y":40,"w":232,"h":36,"hidden":true,"text":"Bins out tonight","align":1,"text_color":"#000000"}
+{"page":1,"id":20,"obj":"label","x":4,"y":88,"w":232,"h":16,"text":"Energy (W)","text_color":"#aaaaaa"}
+{"page":1,"id":21,"obj":"chart","x":4,"y":106,"w":232,"h":80,"type":1,"point_count":24,"series1_color":"#1fa3ec","series1_y_array":"0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0","range_min":0,"range_max":3000,"bg_color":"#1a1a1a","bg_opa":255,"border_width":0,"radius":4}
+{"page":1,"id":22,"obj":"label","x":4,"y":188,"w":232,"h":16,"text":"--- W now","align":2,"text_color":"#ffffff"}
+{"page":1,"id":30,"obj":"label","x":4,"y":214,"w":232,"h":16,"text":"Living Room","text_color":"#aaaaaa"}
+{"page":1,"id":31,"obj":"slider","x":4,"y":232,"w":180,"h":36,"min":0,"max":100,"val":0,"bg_color":"#333333","bg_color1":"#ffaa00"}
+{"page":1,"id":32,"obj":"label","x":188,"y":236,"w":48,"h":28,"text":"0%","align":1,"text_color":"#ffffff"}
+{"page":1,"id":40,"obj":"label","x":0,"y":292,"w":240,"h":24,"text":"--:--","align":1,"text_color":"#888888"}

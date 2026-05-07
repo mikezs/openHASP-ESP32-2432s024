@@ -69,9 +69,9 @@ void setup()
     //     filesystemSetup();  // FS mount is done in configSetup()
     // #endif
 
-    // #if HASP_USE_SDCARD > 0
-    //     sdcardSetup();
-    // #endif
+#if HASP_USE_SDCARD > 0
+    sdcardSetup();
+#endif
 
     /****************************
      * Read & Apply User Configuration
@@ -191,6 +191,10 @@ IRAM_ATTR void loop()
 
 #if HASP_USE_MQTT > 0
     mqttLoop();
+#endif
+
+#if HASP_USE_SDCARD > 0
+    sdcardLoop();
 #endif
 
     // haspDevice.loop();

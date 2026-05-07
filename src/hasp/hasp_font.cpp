@@ -160,55 +160,69 @@ static lv_font_t* font_find_in_list(const char* payload)
 static lv_font_t* font_add_to_list(const char* payload)
 {
     char filename[256];
-
-    // Try .bin file
-    snprintf_P(filename, sizeof(filename), PSTR("L:\\%s.bin"), payload);
-    lv_font_t* font   = hasp_font_load(filename);
+    lv_font_t* font   = NULL;
     char* name_p      = NULL;
     uint8_t font_type = 0;
 
+    const char* drives[] = {
+        "L:\\",
+#if HASP_USE_SDCARD > 0
+        "S:\\",
+#endif
+    };
+
+    for(size_t d = 0; d < sizeof(drives) / sizeof(drives[0]); d++) {
+        if(font) break;
+
+        // Try .bin file
+        snprintf_P(filename, sizeof(filename), PSTR("%s%s.bin"), drives[d], payload);
+        font = hasp_font_load(filename);
+
 #if defined(ARDUINO_ARCH_ESP32) && (HASP_USE_FREETYPE > 0)
-    char* ext[] = {"ttf", "otf"};
-    for(size_t i = 0; i < 2; i++) {
-        if(!font) {
+        char* ext[] = {"ttf", "otf"};
+        for(size_t i = 0; i < 2; i++) {
+            if(!font) {
 
-            size_t pos = font_split_payload(payload);
-            if(pos > 0 && pos < 56) {
-                uint16_t size = atoi(payload + pos);
-                if(payload[pos - 1] == '_') pos--; // truncate trailing underscore
+                size_t pos = font_split_payload(payload);
+                if(pos > 0 && pos < 56) {
+                    uint16_t size = atoi(payload + pos);
+                    if(payload[pos - 1] == '_') pos--; // truncate trailing underscore
 
-                char fontname[256];
-                memset(fontname, 0, sizeof(fontname));
-                strncpy(fontname, payload, pos);
-                snprintf_P(filename, sizeof(filename), PSTR("L:\\%s.%s"), fontname, ext[i]);
+                    char fontname[256];
+                    memset(fontname, 0, sizeof(fontname));
+                    strncpy(fontname, payload, pos);
+                    snprintf_P(filename, sizeof(filename), PSTR("%s%s.%s"), drives[d], fontname, ext[i]);
 
-                // Test if the file exists and can be opened
-                lv_fs_file_t f;
-                lv_fs_res_t res;
-                res = lv_fs_open(&f, filename, LV_FS_MODE_RD);
-                if(res != LV_FS_RES_OK) {
-                    LOG_VERBOSE(TAG_FONT, F(D_FILE_NOT_FOUND ": %s"), filename);
-                    continue;
-                } else {
-                    lv_fs_close(&f);
-                    LOG_VERBOSE(TAG_FONT, F(D_FILE_LOADING), filename);
-                }
+                    // Test if the file exists and can be opened
+                    lv_fs_file_t f;
+                    lv_fs_res_t res;
+                    res = lv_fs_open(&f, filename, LV_FS_MODE_RD);
+                    if(res != LV_FS_RES_OK) {
+                        LOG_VERBOSE(TAG_FONT, F(D_FILE_NOT_FOUND ": %s"), filename);
+                        continue;
+                    } else {
+                        lv_fs_close(&f);
+                        LOG_VERBOSE(TAG_FONT, F(D_FILE_LOADING), filename);
+                    }
 
-                lv_ft_info_t info;
-                info.name     = filename;
-                info.weight   = size;
-                info.mem      = NULL;
-                info.mem_size = 0;
-                info.style    = FT_FONT_STYLE_NORMAL;
-                LOG_VERBOSE(TAG_FONT, F("Loading font %s size %d"), filename, size);
-                if(lv_ft_font_init(&info)) {
-                    font      = info.font;
-                    font_type = 1;
+                    lv_ft_info_t info;
+                    info.name     = filename;
+                    info.weight   = size;
+                    info.mem      = NULL;
+                    info.mem_size = 0;
+                    info.style    = FT_FONT_STYLE_NORMAL;
+                    LOG_VERBOSE(TAG_FONT, F("Loading font %s size %d"), filename, size);
+                    if(lv_ft_font_init(&info)) {
+                        font      = info.font;
+                        font_type = 1;
+                    }
                 }
             }
         }
+#endif
     }
 
+#if defined(ARDUINO_ARCH_ESP32) && (HASP_USE_FREETYPE > 0)
 #if 1 || defined(ESP32S3)
     if(!font) {
         strcpy(filename, "default");
@@ -228,7 +242,6 @@ static lv_font_t* font_add_to_list(const char* payload)
         }
     }
 #endif // ESP32S3
-
 #endif // ESP32 && HASP_USE_FREETYPE
 
     if(!font) return NULL;

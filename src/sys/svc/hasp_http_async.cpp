@@ -919,7 +919,17 @@ int handleFileRead(AsyncWebServerRequest* request, String path)
     }
 
     String pathWithGz = path + F(".gz");
-    if(HASP_FS.exists(pathWithGz) || HASP_FS.exists(path)) {
+
+    fs::FS* fs = &HASP_FS;
+#if HASP_USE_SDCARD > 0
+    if(path.startsWith(F("/sdcard/"))) {
+        fs   = &SD;
+        path = path.substring(7);
+        pathWithGz = path + F(".gz");
+    }
+#endif
+
+    if(fs->exists(pathWithGz) || fs->exists(path)) {
 
         String contentType((char*)0);
         if(request->hasArg(F("download")))
@@ -927,14 +937,14 @@ int handleFileRead(AsyncWebServerRequest* request, String path)
         else
             contentType = getContentType(path);
 
-        if(!HASP_FS.exists(path) && HASP_FS.exists(pathWithGz))
+        if(!fs.exists(path) && fs.exists(pathWithGz))
             path = pathWithGz; // Only use .gz if normal file doesn't exist
-        File file = HASP_FS.open(path, "r");
+        File file = fs.open(path, "r");
 
         String configFile((char*)0); // Verify if the file is config.json
         configFile = String(FPSTR(FP_HASP_CONFIG_FILE));
 
-        if(!strncasecmp(file.name(), configFile.c_str(), configFile.length())) {
+        if(fs == &HASP_FS && !strncasecmp(file.name(), configFile.c_str(), configFile.length())) {
             file.close();
             DynamicJsonDocument settings(MAX_CONFIG_JSON_ALLOC_SIZE);
             DeserializationError error = configParseFile(configFile, settings);
@@ -950,7 +960,7 @@ int handleFileRead(AsyncWebServerRequest* request, String path)
         } else {
 
             // Stream other files directly from filesystem
-            request->send(HASP_FS, path, contentType);
+            request->send(*fs, path, contentType);
             file.close();
         }
 
@@ -986,10 +996,21 @@ void handleFileUpload(AsyncWebServerRequest* request, String filename, size_t in
         if(!filename.startsWith("/")) {
             filename = "/" + filename;
         }
-        if(filename.length() < 32) {
-            fsUploadFile = HASP_FS.open(filename, "w");
+
+        fs::FS* fs = &HASP_FS;
+#if HASP_USE_SDCARD > 0
+        if(filename.startsWith(F("/sdcard/"))) {
+            fs       = &SD;
+            filename = filename.substring(7);
+        }
+#endif
+
+        if(filename.length() < 64) {
+            fsUploadFile = fs->open(filename, "w");
             LOG_TRACE(TAG_HTTP, F("handleFileUpload Name: %s"), filename.c_str());
-            haspProgressMsg(fsUploadFile.name());
+            if(fsUploadFile) {
+                haspProgressMsg(fsUploadFile.name());
+            }
         } else {
             LOG_ERROR(TAG_HTTP, F("Filename %s is too long"), filename.c_str());
         }
@@ -1038,10 +1059,19 @@ void handleFileDelete(AsyncWebServerRequest* request)
     if(path == "/") {
         return request->send_P(500, mimetype, PSTR("BAD PATH"));
     }
-    if(!HASP_FS.exists(path)) {
+
+    fs::FS* fs = &HASP_FS;
+#if HASP_USE_SDCARD > 0
+    if(path.startsWith(F("/sdcard/"))) {
+        fs   = &SD;
+        path = path.substring(7);
+    }
+#endif
+
+    if(!fs->exists(path)) {
         return request->send_P(404, mimetype, PSTR("FileNotFound"));
     }
-    HASP_FS.remove(path);
+    fs->remove(path);
     request->send_P(200, mimetype, PSTR(""));
     // path.clear();
 }
@@ -1060,10 +1090,19 @@ void handleFileCreate(AsyncWebServerRequest* request)
         if(path == "/") {
             return request->send(500, PSTR("text/plain"), PSTR("BAD PATH"));
         }
-        if(HASP_FS.exists(path)) {
+
+        fs::FS* fs = &HASP_FS;
+#if HASP_USE_SDCARD > 0
+        if(path.startsWith(F("/sdcard/"))) {
+            fs   = &SD;
+            path = path.substring(7);
+        }
+#endif
+
+        if(fs->exists(path)) {
             return request->send(500, PSTR("text/plain"), PSTR("FILE EXISTS"));
         }
-        File file = HASP_FS.open(path, "w");
+        File file = fs->open(path, "w");
         if(file) {
             file.close();
         } else {
@@ -1100,7 +1139,16 @@ void handleFileList(AsyncWebServerRequest* request)
     path.clear();
 
 #if defined(ARDUINO_ARCH_ESP32)
-    File root = HASP_FS.open("/", FILE_READ);
+    fs::FS* fs = &HASP_FS;
+#if HASP_USE_SDCARD > 0
+    if(path.startsWith(F("/sdcard"))) {
+        fs   = &SD;
+        path = path.substring(7);
+        if(path.length() == 0) path = "/";
+    }
+#endif
+
+    File root = fs->open(path.c_str(), FILE_READ);
     File file = root.openNextFile();
     String output((char*)0);
     output.reserve(HTTP_PAGE_SIZE);
@@ -1110,14 +1158,21 @@ void handleFileList(AsyncWebServerRequest* request)
         if(output != "[") {
             output += ',';
         }
-        bool isDir = false;
+        bool isDir = file.isDirectory();
         output += F("{\"type\":\"");
         output += (isDir) ? F("dir") : F("file");
         output += F("\",\"name\":\"");
-        if(file.name()[0] == '/') {
-            output += &(file.name()[1]);
+
+        String filename = file.name();
+        if(filename.startsWith(path) && path != "/") {
+             filename = filename.substring(path.length());
+             if(filename.startsWith("/")) filename = filename.substring(1);
+        }
+
+        if(filename[0] == '/') {
+            output += &(filename[1]);
         } else {
-            output += file.name();
+            output += filename;
         }
         output += F("\"}");
 

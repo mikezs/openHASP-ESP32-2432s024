@@ -228,6 +228,16 @@ typedef const char* lv_fs_drv_user_data_t;
 #  define LV_FS_IF_POSIX    '\0'
 //#  define LV_FS_IF_SPIFFS   '\0'  // no internal esp Flash
 #endif
+
+#if HASP_USE_SDCARD > 0
+#  define LV_FS_IF_SD       'S'   // SD card filesystem
+#  ifndef LV_FS_SD_PATH
+#    define LV_FS_SD_PATH "/sdcard"
+#  endif
+#else
+#  define LV_FS_IF_SD       '\0'
+#endif
+
 #endif  /*LV_USE_FS_IF*/
 #if HASP_TARGET_ARDUINO && !defined(LV_FS_PC_PATH)
 #define LV_FS_PC_PATH "/littlefs"

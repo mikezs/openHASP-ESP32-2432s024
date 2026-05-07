@@ -48,6 +48,10 @@
 #include "hasp_config.h"
 #endif
 
+#if HASP_USE_SDCARD > 0
+#include "sys/svc/hasp_sdcard.h"
+#endif
+
 #if HASP_USE_PNGDECODE > 0
 #include "lv_png.h"
 #endif

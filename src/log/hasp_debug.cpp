@@ -38,6 +38,7 @@
 #include "hal/hasp_hal.h"
 #include "hasp_debug.h"
 #include "hasp_config.h"
+#include "hasp_sdlog.h"
 
 #include "hasp/hasp_dispatch.h"
 #include "hasp/hasp.h"
@@ -164,6 +165,11 @@ bool debugGetConfig(const JsonObject& settings)
     if(debugAnsiCodes != settings[FPSTR(FP_DEBUG_ANSI)]) changed = true;
     settings[FPSTR(FP_DEBUG_ANSI)] = (uint8_t)debugAnsiCodes;
 
+#if HASP_USE_SDCARD > 0
+    if(sdLogStream.is_enabled() != settings[FPSTR(FP_DEBUG_SDLOG)]) changed = true;
+    settings[FPSTR(FP_DEBUG_SDLOG)] = (uint8_t)sdLogStream.is_enabled();
+#endif
+
     if(debugSerialBaud != settings[FPSTR(FP_CONFIG_BAUD)]) changed = true;
     settings[FPSTR(FP_CONFIG_BAUD)] = debugSerialBaud;
 
@@ -209,6 +215,19 @@ bool debugSetConfig(const JsonObject& settings)
 
     /* Ansi Code Settings */
     changed |= configSet(debugAnsiCodes, settings[FPSTR(FP_DEBUG_ANSI)], F("debugAnsi"));
+
+#if HASP_USE_SDCARD > 0
+    bool sdlog = sdLogStream.is_enabled();
+    if(configSet(sdlog, settings[FPSTR(FP_DEBUG_SDLOG)], F("debugSdLog"))) {
+        changed = true;
+        sdLogStream.set_enabled(sdlog);
+        if(sdlog) {
+            Log.registerOutput(4, &sdLogStream, HASP_LOG_LEVEL, true);
+        } else {
+            Log.unregisterOutput(4);
+        }
+    }
+#endif
 
     /* Teleperiod Settings */
     changed |= configSet(dispatch_setings.teleperiod, settings[FPSTR(FP_DEBUG_TELEPERIOD)], F("debugTelePeriod"));
@@ -412,6 +431,7 @@ void debugSetup(JsonObject settings)
     Log.unregisterOutput(0);
     Log.unregisterOutput(1);
     Log.unregisterOutput(3);
+    Log.unregisterOutput(4);
 
 #if HASP_USE_CONFIG > 0
     if(!settings[FPSTR(FP_CONFIG_BAUD)].isNull()) {
@@ -421,7 +441,15 @@ void debugSetup(JsonObject settings)
 }
 
 IRAM_ATTR void debugLoop(void)
-{}
+{
+#if HASP_USE_SDCARD > 0
+    static uint32_t lastFlush = 0;
+    if(sdLogStream.is_enabled() && (millis() - lastFlush > 5000)) {
+        sdLogStream.flush();
+        lastFlush = millis();
+    }
+#endif
+}
 
 void printLocalTime()
 {

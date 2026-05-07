@@ -131,6 +131,14 @@
             "human-greeting",
             "run"
         ],
+        "recycling": [
+            "package-variant", // card
+            "newspaper", // paper
+            "bottle-soda-classic-outline", // plastic
+            "recycle", // green box
+            "trash-can-outline", // black bin and brown bin
+            "food-apple-outline" // food waste
+        ],
         "security": [
             "alert",
             "cctv",

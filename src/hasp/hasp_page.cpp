@@ -215,14 +215,27 @@ void Page::load_jsonl(const char* pagesfile)
         return;
     }
 
-    if(!HASP_FS.exists(pagesfile)) {
+    fs::FS* fs = &HASP_FS;
+    const char* path = pagesfile;
+
+#if defined(ARDUINO_ARCH_ESP32) && HASP_USE_SDCARD > 0
+    if(String(pagesfile).startsWith(F("S:/"))) {
+        fs   = &SD;
+        path = pagesfile + 3;
+    } else if(String(pagesfile).startsWith(F("/sdcard/"))) {
+        fs   = &SD;
+        path = pagesfile + 8;
+    }
+#endif
+
+    if(!fs->exists(path)) {
         LOG_WARNING(TAG_HASP, F(D_FILE_NOT_FOUND ": %s"), pagesfile);
         return;
     }
 
     LOG_TRACE(TAG_HASP, F(D_FILE_LOADING), pagesfile);
 
-    File file = HASP_FS.open(pagesfile, "r");
+    File file = fs->open(path, "r");
     if(!file) {
         LOG_ERROR(TAG_HASP, F(D_FILE_LOAD_FAILED), pagesfile);
         return;

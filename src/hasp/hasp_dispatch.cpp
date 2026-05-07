@@ -675,8 +675,8 @@ void dispatch_screenshot(const char*, const char* filename, uint8_t source)
         char tempfile[32];
         memcpy_P(tempfile, PSTR("/screenshot.bmp"), sizeof(tempfile));
         guiTakeScreenshot(tempfile);
-    } else if(strlen(filename) > 31 || filename[0] != '/') { // Invalid filename
-        LOG_WARNING(TAG_MSGR, F("D_FILE_SAVE_FAILED"), filename);
+    } else if(strlen(filename) > 31 || (filename[0] != '/' && strncmp(filename, "S:/", 3) != 0)) { // Invalid filename
+        LOG_WARNING(TAG_MSGR, F(D_FILE_SAVE_FAILED), filename);
     } else { // Valid filename
         guiTakeScreenshot(filename);
     }
@@ -913,45 +913,56 @@ void dispatch_run_script(const char*, const char* payload, uint8_t source)
 #endif
 }
 
-/*
 void dispatch_fs(const char*, const char* payload, uint8_t source)
 {
-    StaticJsonDocument<512> json;
+    DynamicJsonDocument json(512);
 
     // Note: Deserialization needs to be (const char *) so the objects WILL be copied
     // this uses more memory but otherwise the mqtt receive buffer can get overwritten by the send buffer !!
     DeserializationError jsonError = deserializeJson(json, payload);
-    // json.shrinkToFit();
 
     if(!jsonError && json.is<JsonObject>()) { // Only JsonObject is valid
-        JsonVariant action;
-
         const char* cmd = json["cmd"].as<const char*>();
         const char* src = json["src"].as<const char*>();
-        const char* dst = json["dst"].as<const char*>();
-        int res = 0;
+        // const char* dst = json["dst"].as<const char*>();
+
+        if(!cmd || !src) return;
+
+        fs::FS* fs = &HASP_FS;
+        const char* path = src;
+
+#if defined(ARDUINO_ARCH_ESP32) && HASP_USE_SDCARD > 0
+        if(String(src).startsWith(F("/sdcard/"))) {
+            fs   = &SD;
+            path = src + 7;
+        }
+#endif
 
         if(String(cmd) == "stat") {
-            res = filesystem_vfs_file_exists(src);
+            if(fs->exists(path)) {
+                File f = fs->open(path, "r");
+                LOG_INFO(TAG_MSGR, F("File: %s Size: %u"), src, (uint32_t)f.size());
+                f.close();
+            } else {
+                LOG_ERROR(TAG_MSGR, F("File %s not found"), src);
+            }
         }
         if(String(cmd) == "rm") {
-            res = filesystem_vfs_delete_file(src);
-        }
-        if(String(cmd) == "cp") {
-            res = filesystem_vfs_copy_file(src, dst);
+            if(fs->remove(path)) {
+                LOG_INFO(TAG_MSGR, F("File %s deleted"), src);
+            } else {
+                LOG_ERROR(TAG_MSGR, F("Failed to delete %s"), src);
+            }
         }
         if(String(cmd) == "ls") {
+#if defined(ARDUINO_ARCH_ESP32)
             filesystem_list_path(src);
-        }
-
-        if(res) {
-            LOG_WARNING(TAG_MSGR, "Succes");
-        } else {
-            LOG_WARNING(TAG_MSGR, "Failed");
+#else
+             LOG_WARNING(TAG_MSGR, F("ls not supported on this platform"));
+#endif
         }
     }
 }
-*/
 
 #if HASP_TARGET_PC
 static void shell_command_thread(char* cmdline)
@@ -1682,7 +1693,7 @@ void dispatchSetup()
     dispatch_add_command(PSTR("sensors"), dispatch_send_sensordata);
     dispatch_add_command(PSTR("theme"), dispatch_theme);
     dispatch_add_command(PSTR("run"), dispatch_run_script);
-    // dispatch_add_command(PSTR("fs"), dispatch_fs);
+    dispatch_add_command(PSTR("fs"), dispatch_fs);
 #if HASP_TARGET_PC
     dispatch_add_command(PSTR("shell"), dispatch_shell_execute);
 #endif

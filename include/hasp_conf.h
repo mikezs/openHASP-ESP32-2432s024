@@ -154,7 +154,11 @@
 #endif
 
 #ifndef HASP_USE_SDCARD
+#ifdef SD_CS
+#define HASP_USE_SDCARD 1
+#else
 #define HASP_USE_SDCARD 0
+#endif
 #endif
 
 #ifndef HASP_USE_GPIO
@@ -377,6 +381,10 @@ static WiFiSpiClass WiFi;
 
 #if HASP_USE_TASMOTA_CLIENT > 0
 #include "sys/svc/hasp_slave.h"
+#endif
+
+#if HASP_USE_SDCARD > 0
+#include "sys/svc/hasp_sdcard.h"
 #endif
 
 #if defined(WINDOWS)

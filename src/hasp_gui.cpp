@@ -709,7 +709,20 @@ void guiTakeScreenshot(const char* pFileName)
     uint8_t buffer[sizeof(bmp_header_t) + 2];
     gui_get_bitmap_header(buffer, sizeof(buffer));
 
-    pFileOut = HASP_FS.open(pFileName, "w");
+    fs::FS* fs = &HASP_FS;
+    const char* path = pFileName;
+
+#if defined(ARDUINO_ARCH_ESP32) && HASP_USE_SDCARD > 0
+    if(String(pFileName).startsWith(F("S:/"))) {
+        fs   = &SD;
+        path = pFileName + 3;
+    } else if(String(pFileName).startsWith(F("/sdcard/"))) {
+        fs   = &SD;
+        path = pFileName + 8;
+    }
+#endif
+
+    pFileOut = fs->open(path, "w");
     if(pFileOut) {
 
         size_t len = pFileOut.write(buffer, sizeof(buffer));

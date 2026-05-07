@@ -64,6 +64,10 @@ typedef struct
 #endif // ARDUINO_ARCH
 
 #if defined(ARDUINO_ARCH_ESP32)
+#include "rom/crc.h"
+#if HASP_USE_SDCARD > 0
+#include "SD.h"
+#endif
 void filesystemUnzip(const char*, const char* filename, uint8_t source);
 String filesystem_list(fs::FS& fs, const char* dirname, uint8_t levels);
 #endif

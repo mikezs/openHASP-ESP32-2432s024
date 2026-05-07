@@ -1123,13 +1123,22 @@ static inline int handleFilesystemFile(String path)
     String contentType((char*)0);
     contentType = http_get_content_type(path);
 
-    if(HASP_FS.exists(pathWithGz) /* || HASP_FS.exists(pathWithBr) */ || HASP_FS.exists(path)) {
+    fs::FS* fs = &HASP_FS;
+#if HASP_USE_SDCARD > 0
+    if(path.startsWith(F("/sdcard/"))) {
+        fs   = &SD;
+        path = path.substring(7);
+        pathWithGz = path + F(".gz");
+    }
+#endif
+
+    if(fs->exists(pathWithGz) /* || fs->exists(pathWithBr) */ || fs->exists(path)) {
 
         if(webServer.hasArg("download")) contentType = F("application/octet-stream");
 
-        if(!HASP_FS.exists(path) && HASP_FS.exists(pathWithGz))
+        if(!fs->exists(path) && fs->exists(pathWithGz))
             path = pathWithGz; // Only use .gz if normal file doesn't exist
-        // if(!HASP_FS.exists(path) && HASP_FS.exists(pathWithBr))
+        // if(!fs->exists(path) && fs->exists(pathWithBr))
         //     path = pathWithBr; // Only use .gz if normal file doesn't exist
 
         LOG_TRACE(TAG_HTTP, D_HTTP_SENDING_PAGE, path.c_str(), webServer.client().remoteIP().toString().c_str());
@@ -1137,7 +1146,7 @@ static inline int handleFilesystemFile(String path)
         String configFile((char*)0); // Verify if the file is config.json
         configFile = FPSTR(FP_HASP_CONFIG_FILE);
 
-        if(path.endsWith(configFile.c_str())) { // "//config.json" is also a valid path!
+        if(fs == &HASP_FS && path.endsWith(configFile.c_str())) { // "//config.json" is also a valid path!
             DynamicJsonDocument settings(MAX_CONFIG_JSON_ALLOC_SIZE);
             DeserializationError error = configParseFile(configFile, settings);
 
@@ -1150,7 +1159,7 @@ static inline int handleFilesystemFile(String path)
             webServer.send(200, contentType, buffer);
 
         } else {
-            File file       = HASP_FS.open(path, "r");
+            File file       = fs->open(path, "r");
             time_t modified = file.getLastWrite();
             String etag((char*)0);
             etag.reserve(64);
@@ -1209,12 +1218,20 @@ static void handleFileUpload()
             filename.reserve(64);
             filename = upload->filename;
             if(!filename.startsWith("/")) {
-                filename = "/";
-                filename += upload->filename;
+               filename = "/";
+               filename += upload->filename;
             }
-            fsUploadFile = HASP_FS.open(filename, "w");
-            if(fsUploadFile) {
-                if(!fsUploadFile || fsUploadFile.isDirectory()) {
+
+    fs::FS* fs = &HASP_FS;
+#if HASP_USE_SDCARD > 0
+    if(filename.startsWith(F("/sdcard/"))) {
+        fs       = &SD;
+        filename = filename.substring(7);
+    }
+#endif
+
+    fsUploadFile = fs->open(filename, "w");
+            if(fsUploadFile) {                if(!fsUploadFile || fsUploadFile.isDirectory()) {
                     // Clear upload filesize, fix Response Content-Length
                     webServer.setContentLength(CONTENT_LENGTH_NOT_SET);
                     webServer.send_P(400, PSTR("text/plain"), PSTR("Invalid filename"));
@@ -1286,15 +1303,24 @@ static void handleFileDelete()
     if(path == "/") {
         return webServer.send(500, mimetype, "BAD PATH");
     }
-    if(!HASP_FS.exists(path)) {
+
+    fs::FS* fs = &HASP_FS;
+#if HASP_USE_SDCARD > 0
+    if(path.startsWith(F("/sdcard/"))) {
+        fs   = &SD;
+        path = path.substring(7);
+    }
+#endif
+
+    if(!fs->exists(path)) {
         return webServer.send(404, mimetype, "FileNotFound");
     }
     bool result;
     if(path.endsWith("/")) {
         path.remove(path.length() - 1);
-        result = HASP_FS.rmdir(path);
+        result = fs->rmdir(path);
     } else {
-        result = HASP_FS.remove(path);
+        result = fs->remove(path);
     }
     if(result) {
         webServer.send(200, mimetype, String(""));
@@ -1317,10 +1343,19 @@ static void handleFileCreate()
         if(path == "/") {
             return webServer.send(500, PSTR("text/plain"), PSTR("BAD PATH"));
         }
-        if(HASP_FS.exists(path)) {
+
+        fs::FS* fs = &HASP_FS;
+#if HASP_USE_SDCARD > 0
+        if(path.startsWith(F("/sdcard/"))) {
+            fs   = &SD;
+            path = path.substring(7);
+        }
+#endif
+
+        if(fs->exists(path)) {
             return webServer.send(500, PSTR("text/plain"), PSTR("FILE EXISTS"));
         }
-        File file = HASP_FS.open(path, "w");
+        File file = fs->open(path, "w");
         if(file) {
             file.close();
         } else {
@@ -1358,7 +1393,16 @@ static void handleFileList()
     // path.clear();
 
 #if defined(ARDUINO_ARCH_ESP32)
-    File root = HASP_FS.open(path.c_str(), FILE_READ);
+    fs::FS* fs = &HASP_FS;
+#if HASP_USE_SDCARD > 0
+    if(path.startsWith(F("/sdcard"))) {
+        fs   = &SD;
+        path = path.substring(7);
+        if(path.length() == 0) path = "/";
+    }
+#endif
+
+    File root = fs->open(path.c_str(), FILE_READ);
     File file = root.openNextFile();
     String output((char*)0);
     output.reserve(HTTP_PAGE_SIZE);
@@ -1372,10 +1416,17 @@ static void handleFileList()
         output += F("{\"type\":\"");
         output += (isDir) ? "dir" : "file";
         output += F("\",\"name\":\"");
-        if(file.name()[0] == '/') {
-            output += &(file.name()[1]);
+        
+        String filename = file.name();
+        if(filename.startsWith(path) && path != "/") {
+             filename = filename.substring(path.length());
+             if(filename.startsWith("/")) filename = filename.substring(1);
+        }
+
+        if(filename[0] == '/') {
+            output += &(filename[1]);
         } else {
-            output += file.name();
+            output += filename;
         }
         output += F("\"}");
 

@@ -38,12 +38,29 @@ extern const uint8_t PAGES_JSONL_END[] asm("_binary_data_pages_pages_jsonl_end")
 #include "hasp_debug.h"
 #include "hasp_filesystem.h"
 
+#if defined(ARDUINO_ARCH_ESP32) && HASP_USE_SDCARD > 0
+#include "SD.h"
+#endif
+
 #if defined(ARDUINO_ARCH_ESP32)
 #include "rom/crc.h"
 
 void filesystemUnzip(const char*, const char* filename, uint8_t source)
 {
-    File zipfile = HASP_FS.open(filename, FILE_READ);
+    fs::FS& fs = HASP_FS;
+    const char* path = filename;
+
+#if defined(ARDUINO_ARCH_ESP32) && HASP_USE_SDCARD > 0
+    if(String(filename).startsWith(F("S:/"))) {
+        fs   = SD;
+        path = filename + 3;
+    } else if(String(filename).startsWith(F("/sdcard/"))) {
+        fs   = SD;
+        path = filename + 8;
+    }
+#endif
+
+    File zipfile = fs.open(path, FILE_READ);
     if(!zipfile) {
         return;
     }
@@ -94,9 +111,9 @@ void filesystemUnzip(const char*, const char* filename, uint8_t source)
                     zipfile.seek(fh.compressed_size, SeekCur); // skip compressed file
                 } else {
 
-                    if(HASP_FS.exists(name)) HASP_FS.remove(name);
+                    if(fs.exists(name)) fs.remove(name);
 
-                    File f = HASP_FS.open(name, FILE_WRITE);
+                    File f = fs.open(name, FILE_WRITE);
                     if(f) {
                         uint8_t buffer[512];
                         uint32_t crc32 = 0;
@@ -170,6 +187,14 @@ void filesystemInfo()
 #endif
 
     Log.verbose(TAG_FILE, "Partition size: used: %s / total: %s", used, total);
+
+#if defined(ESP32) && HASP_USE_SDCARD > 0
+    uint64_t sd_used  = SD.usedBytes();
+    uint64_t sd_total = SD.totalBytes();
+    Parser::format_bytes(sd_used, used, sizeof(used));
+    Parser::format_bytes(sd_total, total, sizeof(total));
+    Log.verbose(TAG_FILE, "SD card size  : used: %s / total: %s", used, total);
+#endif
 }
 
 void filesystemList()
@@ -199,6 +224,16 @@ void filesystemList()
             LOG_VERBOSE(TAG_FILE, F("   * %s  (%u bytes)"), dir.fileName().c_str(), (uint32_t)dir.fileSize());
         }
 #endif
+    }
+#endif
+
+#if defined(ESP32) && HASP_USE_SDCARD > 0
+    LOG_VERBOSE(TAG_FILE, F("Listing files on the SD card:"));
+    File root = SD.open("/");
+    File file = root.openNextFile();
+    while(file) {
+        LOG_VERBOSE(TAG_FILE, F("   * %s  (%u bytes)"), file.name(), (uint32_t)file.size());
+        file = root.openNextFile();
     }
 #endif
 }
