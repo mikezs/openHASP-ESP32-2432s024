@@ -1389,8 +1389,8 @@ static void handleFileList()
     }
 
     String path = webServer.arg("dir");
-    // LOG_TRACE(TAG_HTTP, F("handleFileList: %s"), path.c_str());
-    // path.clear();
+    if(path == "undefined") path = "/";
+    if(path.length() == 0) path = "/";
 
 #if defined(ARDUINO_ARCH_ESP32)
     fs::FS* fs = &HASP_FS;
@@ -1402,7 +1402,7 @@ static void handleFileList()
     }
 #endif
 
-    LOG_TRACE(TAG_HTTP, F("handleFileList: fs=%p path=%s"), fs, path.c_str());
+    LOG_INFO(TAG_HTTP, F("handleFileList: path=[%s] fs=[%s]"), path.c_str(), (fs == &HASP_FS) ? "Flash" : "SD");
 
     File root = fs->open(path.c_str(), FILE_READ);
     String output((char*)0);
@@ -1437,11 +1437,11 @@ static void handleFileList()
             file = root.openNextFile();
         }
     } else {
-         LOG_WARNING(TAG_HTTP, F("handleFileList: Failed to open directory %s"), path.c_str());
+         LOG_WARNING(TAG_HTTP, F("handleFileList: Failed to open %s"), path.c_str());
     }
 
 #if HASP_USE_SDCARD > 0
-    if((path == "/" || path.length() == 0) && fs == &HASP_FS) {
+    if(fs == &HASP_FS && (path == "/" || path.length() == 0)) {
         if(output != "[") output += ',';
         output += F("{\"type\":\"dir\",\"name\":\"sdcard\"}");
     }

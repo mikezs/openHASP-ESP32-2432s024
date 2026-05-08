@@ -709,9 +709,12 @@ void guiTakeScreenshot(const char* pFileName)
     uint8_t buffer[sizeof(bmp_header_t) + 2];
     gui_get_bitmap_header(buffer, sizeof(buffer));
 
-    fs::FS* fs = &HASP_FS;
-    String sdPath((char*)0);
+    // Reset the global File object to ensure it's in a clean state
+    pFileOut = File();
+
+    fs::FS* fs       = &HASP_FS;
     const char* path = pFileName;
+    String sdPath((char*)0);
 
 #if defined(ARDUINO_ARCH_ESP32) && HASP_USE_SDCARD > 0
     if(String(pFileName).startsWith(F("S:/"))) {
@@ -724,6 +727,8 @@ void guiTakeScreenshot(const char* pFileName)
         path   = sdPath.c_str();
     }
 #endif
+
+    LOG_INFO(TAG_GUI, F("Taking screenshot to %s on %s"), path, (fs == &HASP_FS) ? "Flash" : "SD");
 
     pFileOut = fs->open(path, FILE_WRITE);
     if(pFileOut) {
