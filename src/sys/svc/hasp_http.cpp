@@ -1402,44 +1402,46 @@ static void handleFileList()
     }
 #endif
 
-    File root = fs->open(path.c_str(), FILE_READ);
-    if(!root || !root.isDirectory()) {
-        return webServer.send(200, PSTR("text/json"), F("[]"));
-    }
+    LOG_TRACE(TAG_HTTP, F("handleFileList: fs=%p path=%s"), fs, path.c_str());
 
-    File file = root.openNextFile();
+    File root = fs->open(path.c_str(), FILE_READ);
     String output((char*)0);
     output.reserve(HTTP_PAGE_SIZE);
     output = "[";
 
-    while(file) {
-        if(output != "[") {
-            output += ',';
-        }
-        bool isDir = file.isDirectory();
-        output += F("{\"type\":\"");
-        output += (isDir) ? "dir" : "file";
-        output += F("\",\"name\":\"");
+    if(root && root.isDirectory()) {
+        File file = root.openNextFile();
+        while(file) {
+            if(output != "[") {
+                output += ',';
+            }
+            bool isDir = file.isDirectory();
+            output += F("{\"type\":\"");
+            output += (isDir) ? "dir" : "file";
+            output += F("\",\"name\":\"");
 
-        String filename = file.name();
-        // SD library on ESP32 sometimes returns the full path, sometimes just the name
-        if(filename.startsWith(path) && path != "/") {
-             filename = filename.substring(path.length());
-             if(filename.startsWith("/")) filename = filename.substring(1);
-        }
+            String filename = file.name();
+            // SD library on ESP32 sometimes returns the full path, sometimes just the name
+            if(filename.startsWith(path) && path != "/") {
+                 filename = filename.substring(path.length());
+                 if(filename.startsWith("/")) filename = filename.substring(1);
+            }
 
-        if(filename[0] == '/') {
-            output += &(filename[1]);
-        } else {
-            output += filename;
-        }
-        output += F("\"}");
+            if(filename[0] == '/') {
+                output += &(filename[1]);
+            } else {
+                output += filename;
+            }
+            output += F("\"}");
 
-        file = root.openNextFile();
+            file = root.openNextFile();
+        }
+    } else {
+         LOG_WARNING(TAG_HTTP, F("handleFileList: Failed to open directory %s"), path.c_str());
     }
 
 #if HASP_USE_SDCARD > 0
-    if(path == "/") {
+    if(path == "/" && fs == &HASP_FS) {
         if(output != "[") output += ',';
         output += F("{\"type\":\"dir\",\"name\":\"sdcard\"}");
     }

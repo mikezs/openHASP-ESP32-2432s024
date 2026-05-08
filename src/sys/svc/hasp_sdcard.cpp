@@ -37,7 +37,20 @@ void sdcardSetup()
                  (cardType == CARD_MMC) ? "MMC" : (cardType == CARD_SD) ? "SDSC" : (cardType == CARD_SDHC) ? "SDHC" : "UNKNOWN");
 
         uint32_t cardSize = SD.cardSize() / (1024 * 1024);
-        LOG_INFO(TAG_FILE, F("SD Card    : Size: %u MB"), cardSize);
+        uint32_t total    = SD.totalBytes() / (1024 * 1024);
+        uint32_t used     = SD.usedBytes() / (1024 * 1024);
+        LOG_INFO(TAG_FILE, F("SD Card    : Size: %u MB (%u MB total, %u MB used)"), cardSize, total, used);
+
+        // Test write
+        File testFile = SD.open("/test.txt", FILE_WRITE);
+        if(testFile) {
+            testFile.println(F("openHASP SD Test"));
+            testFile.close();
+            LOG_INFO(TAG_FILE, F("SD Card    : Write test successful"));
+            SD.remove("/test.txt");
+        } else {
+            LOG_ERROR(TAG_FILE, F("SD Card    : Write test failed!"));
+        }
     }
 #else
     LOG_WARNING(TAG_FILE, F("SD Card    : SD_CS not defined! (Build error?)"));

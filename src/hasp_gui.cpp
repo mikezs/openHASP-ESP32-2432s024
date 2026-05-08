@@ -725,9 +725,9 @@ void guiTakeScreenshot(const char* pFileName)
     }
 #endif
 
-    pFileOut = fs->open(path, "w");
+    pFileOut = fs->open(path, FILE_WRITE);
     if(pFileOut) {
-        LOG_VERBOSE(TAG_GUI, F("File %s opened for writing"), path);
+        LOG_INFO(TAG_GUI, F("File %s opened for writing"), path);
 
         size_t len = pFileOut.write(buffer, sizeof(buffer));
         if(len == sizeof(buffer)) {
@@ -745,7 +745,7 @@ void guiTakeScreenshot(const char* pFileName)
             LOG_INFO(TAG_GUI, F("Bitmap data flushed to %s"), pFileName);
 
         } else {
-            LOG_ERROR(TAG_GUI, F("Data written (%u) does not match header size (%u)"), len, sizeof(buffer));
+            LOG_ERROR(TAG_GUI, F("Data written (%u) does not match header size (%u)"), (uint32_t)len, (uint32_t)sizeof(buffer));
         }
         pFileOut.close();
 

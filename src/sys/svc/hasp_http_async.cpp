@@ -1136,7 +1136,7 @@ void handleFileList(AsyncWebServerRequest* request)
 
     String path = request->arg(F("dir"));
     //  LOG_TRACE(TAG_HTTP, F("handleFileList: %s"), path.c_str());
-    path.clear();
+    // path.clear();
 
 #if defined(ARDUINO_ARCH_ESP32)
     fs::FS* fs = &HASP_FS;
@@ -1149,39 +1149,43 @@ void handleFileList(AsyncWebServerRequest* request)
 #endif
 
     File root = fs->open(path.c_str(), FILE_READ);
-    File file = root.openNextFile();
     String output((char*)0);
     output.reserve(HTTP_PAGE_SIZE);
     output = "[";
 
-    while(file) {
-        if(output != "[") {
-            output += ',';
-        }
-        bool isDir = file.isDirectory();
-        output += F("{\"type\":\"");
-        output += (isDir) ? F("dir") : F("file");
-        output += F("\",\"name\":\"");
+    if(root && root.isDirectory()) {
+        File file = root.openNextFile();
+        while(file) {
+            if(output != "[") {
+                output += ',';
+            }
+            bool isDir = file.isDirectory();
+            output += F("{\"type\":\"");
+            output += (isDir) ? F("dir") : F("file");
+            output += F("\",\"name\":\"");
 
-        String filename = file.name();
-        if(filename.startsWith(path) && path != "/") {
-             filename = filename.substring(path.length());
-             if(filename.startsWith("/")) filename = filename.substring(1);
-        }
+            String filename = file.name();
+            if(filename.startsWith(path) && path != "/") {
+                 filename = filename.substring(path.length());
+                 if(filename.startsWith("/")) filename = filename.substring(1);
+            }
 
-        if(filename[0] == '/') {
-            output += &(filename[1]);
-        } else {
-            output += filename;
-        }
-        output += F("\"}");
+            if(filename[0] == '/') {
+                output += &(filename[1]);
+            } else {
+                output += filename;
+            }
+            output += F("\"}");
 
-        // file.close();
-        file = root.openNextFile();
+            // file.close();
+            file = root.openNextFile();
+        }
+    } else {
+        LOG_WARNING(TAG_HTTP, F("handleFileList: Failed to open directory %s"), path.c_str());
     }
 
 #if HASP_USE_SDCARD > 0
-    if(path == "/") {
+    if(path == "/" && fs == &HASP_FS) {
         if(output != "[") output += ',';
         output += F("{\"type\":\"dir\",\"name\":\"sdcard\"}");
     }
