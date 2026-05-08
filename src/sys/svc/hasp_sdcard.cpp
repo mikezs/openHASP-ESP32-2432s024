@@ -21,8 +21,8 @@ void sdcardSetup()
     SPI.begin(TFT_SCLK, TFT_MISO, TFT_MOSI, SD_CS);
 #endif
 
-    if(!SD.begin(SD_CS, SPI, 4000000, "/sdcard")) {
-        LOG_ERROR(TAG_FILE, F("SD Card    : Initialization failed!"));
+    if(!SD.begin(SD_CS, SPI, 1000000, "/sdcard")) {
+        LOG_ERROR(TAG_FILE, F("SD Card    : Mount failed! (Format?)"));
         sdcard_mounted = false;
     } else {
         uint8_t cardType = SD.cardType();

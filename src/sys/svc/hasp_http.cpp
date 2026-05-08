@@ -1398,11 +1398,15 @@ static void handleFileList()
     if(path.startsWith(F("/sdcard"))) {
         fs   = &SD;
         path = path.substring(7);
-        if(path.length() == 0) path = "/";
+        if(path.length() == 0 || path == " ") path = "/";
     }
 #endif
 
     File root = fs->open(path.c_str(), FILE_READ);
+    if(!root || !root.isDirectory()) {
+        return webServer.send(200, PSTR("text/json"), F("[]"));
+    }
+
     File file = root.openNextFile();
     String output((char*)0);
     output.reserve(HTTP_PAGE_SIZE);
@@ -1416,8 +1420,9 @@ static void handleFileList()
         output += F("{\"type\":\"");
         output += (isDir) ? "dir" : "file";
         output += F("\",\"name\":\"");
-        
+
         String filename = file.name();
+        // SD library on ESP32 sometimes returns the full path, sometimes just the name
         if(filename.startsWith(path) && path != "/") {
              filename = filename.substring(path.length());
              if(filename.startsWith("/")) filename = filename.substring(1);
@@ -1430,7 +1435,6 @@ static void handleFileList()
         }
         output += F("\"}");
 
-        // file.close();
         file = root.openNextFile();
     }
     output += "]";
