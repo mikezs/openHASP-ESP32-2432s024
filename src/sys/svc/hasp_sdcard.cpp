@@ -13,7 +13,7 @@ static bool sdcard_mounted = false;
 void sdcardSetup()
 {
 #ifdef SD_CS
-    LOG_TRACE(TAG_FILE, F("SD Card    : Initializing..."));
+    LOG_INFO(TAG_FILE, F("SD Card    : Initializing..."));
 
 #if defined(SD_MISO) && defined(SD_MOSI) && defined(SD_SCLK)
     SPI.begin(SD_SCLK, SD_MISO, SD_MOSI, SD_CS);
@@ -40,7 +40,7 @@ void sdcardSetup()
         LOG_INFO(TAG_FILE, F("SD Card    : Size: %llu MB"), cardSize);
     }
 #else
-    LOG_WARNING(TAG_FILE, F("SD Card    : SD_CS not defined"));
+    LOG_WARNING(TAG_FILE, F("SD Card    : SD_CS not defined! (Build error?)"));
     sdcard_mounted = false;
 #endif
 }

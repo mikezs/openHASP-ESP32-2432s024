@@ -69,15 +69,15 @@ void setup()
     //     filesystemSetup();  // FS mount is done in configSetup()
     // #endif
 
-#if HASP_USE_SDCARD > 0
-    sdcardSetup();
-#endif
-
     /****************************
      * Read & Apply User Configuration
      ***************************/
 #if HASP_USE_CONFIG > 0
     configSetup(); // also runs  debugSetup(), debugStart() and consoleSetup()
+#endif
+
+#if HASP_USE_SDCARD > 0
+    sdcardSetup();
 #endif
 
 #if HASP_USE_WIFI > 0 || HASP_USE_ETHERNET > 0
