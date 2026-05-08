@@ -710,10 +710,10 @@ void guiTakeScreenshot(const char* pFileName)
     gui_get_bitmap_header(buffer, sizeof(buffer));
 
     fs::FS* fs = &HASP_FS;
+    String sdPath((char*)0);
     const char* path = pFileName;
 
 #if defined(ARDUINO_ARCH_ESP32) && HASP_USE_SDCARD > 0
-    String sdPath((char*)0);
     if(String(pFileName).startsWith(F("S:/"))) {
         fs     = &SD;
         sdPath = "/" + String(pFileName + 3);
