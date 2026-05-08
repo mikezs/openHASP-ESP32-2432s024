@@ -31,7 +31,7 @@
         <div class="container__right">
             <div class="toolbar"><input type="file" id="upload" name="upload" multiple="multiple" hidden><span
                     class="left"><button id="home">Home</button><button
-                        onclick='upload(_("tree"),"/")'>Upload</button><button id="save"
+                        id="upload_btn">Upload</button><button id="save"
                         disabled="disabled">Save</button></span>
                 <div class="right"><input id="page" type="number" min="1" max="12" class="number"><button
                         id="load">Reload Pages</button><button id="init">Clear Pages</button></div><span
@@ -60,13 +60,39 @@
     </div>
     <div id="toast"></div>
     <script>
+        var current_tree = "tree";
+        var current_path = "/";
+
         document.addEventListener("DOMContentLoaded", function() {
             var checkExist = setInterval(function() {
                 if (typeof listFiles === 'function') {
+                    // Initial list
+                    listFiles(_("tree"), "/");
                     listFiles(_("sd-tree"), "/sdcard/");
+                    
+                    // Context tracking
+                    _("tree").getElementsByTagName("div")[0].addEventListener("click", () => { 
+                        current_tree = "tree"; current_path = "/"; 
+                        document.querySelectorAll('.item.bold').forEach(i => i.style.backgroundColor = '');
+                        _("tree").getElementsByTagName("div")[0].style.backgroundColor = '#ddd';
+                    });
+                    _("sd-tree").getElementsByTagName("div")[0].addEventListener("click", () => { 
+                        current_tree = "sd-tree"; current_path = "/sdcard/"; 
+                        document.querySelectorAll('.item.bold').forEach(i => i.style.backgroundColor = '');
+                        _("sd-tree").getElementsByTagName("div")[0].style.backgroundColor = '#ddd';
+                    });
+
+                    // Context menu
+                    _("tree").getElementsByTagName("div")[0].oncontextmenu = e => {
+                        ctx(e, { name: "", children: [] }, "/", _("tree"));
+                    };
                     _("sd-tree").getElementsByTagName("div")[0].oncontextmenu = e => {
                         ctx(e, { name: "", children: [] }, "/sdcard/", _("sd-tree"));
                     };
+                    
+                    // Upload button binding
+                    _("upload_btn").onclick = () => { upload(_(current_tree), current_path); };
+
                     clearInterval(checkExist);
                 }
             }, 100);

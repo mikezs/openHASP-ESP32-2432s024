@@ -734,18 +734,18 @@ void guiTakeScreenshot(const char* pFileName)
 
     LOG_INFO(TAG_GUI, F("Taking screenshot to %s on %s"), path, is_sd ? "SD" : "Flash");
 
-#if defined(ARDUINO_ARCH_ESP32) && HASP_USE_SDCARD > 0
+    // Use "w" instead of FILE_WRITE (which can be "a" or complex flags on some platforms)
+    // and explicitly call the correct filesystem object
     if(is_sd) {
-        pFileOut = SD.open(path, FILE_WRITE);
-    } else {
-        pFileOut = HASP_FS.open(path, FILE_WRITE);
-    }
-#else
-    pFileOut = HASP_FS.open(path, FILE_WRITE);
+#if defined(ARDUINO_ARCH_ESP32) && HASP_USE_SDCARD > 0
+        pFileOut = SD.open(path, "w");
 #endif
+    } else {
+        pFileOut = HASP_FS.open(path, "w");
+    }
 
     if(pFileOut) {
-        LOG_INFO(TAG_GUI, F("File %s opened for writing"), path);
+        LOG_INFO(TAG_GUI, F("File %s opened successfully"), path);
 
         size_t len = pFileOut.write(buffer, sizeof(buffer));
         if(len == sizeof(buffer)) {

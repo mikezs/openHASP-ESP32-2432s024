@@ -462,7 +462,8 @@ a.foot:visited {
 	/* Misc */
 	/* align-items: center; */
 	display: flex;
-	justify-content: left;
+	flex-direction: column;
+	justify-content: flex-start;
 	overflow-x: clip;
 	overflow-y: scroll;
 	background-color: var(--treebg);
