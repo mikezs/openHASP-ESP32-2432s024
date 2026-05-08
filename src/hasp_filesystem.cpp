@@ -51,12 +51,15 @@ void filesystemUnzip(const char*, const char* filename, uint8_t source)
     const char* path = filename;
 
 #if defined(ARDUINO_ARCH_ESP32) && HASP_USE_SDCARD > 0
+    String sdPath((char*)0);
     if(String(filename).startsWith(F("S:/"))) {
-        fs   = SD;
-        path = filename + 3;
+        fs     = SD;
+        sdPath = "/" + String(filename + 3);
+        path   = sdPath.c_str();
     } else if(String(filename).startsWith(F("/sdcard/"))) {
-        fs   = SD;
-        path = filename + 8;
+        fs     = SD;
+        sdPath = "/" + String(filename + 8);
+        path   = sdPath.c_str();
     }
 #endif
 

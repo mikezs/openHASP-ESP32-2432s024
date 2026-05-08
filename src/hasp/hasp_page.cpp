@@ -219,12 +219,15 @@ void Page::load_jsonl(const char* pagesfile)
     const char* path = pagesfile;
 
 #if defined(ARDUINO_ARCH_ESP32) && HASP_USE_SDCARD > 0
+    String sdPath((char*)0);
     if(String(pagesfile).startsWith(F("S:/"))) {
-        fs   = &SD;
-        path = pagesfile + 3;
+        fs     = &SD;
+        sdPath = "/" + String(pagesfile + 3);
+        path   = sdPath.c_str();
     } else if(String(pagesfile).startsWith(F("/sdcard/"))) {
-        fs   = &SD;
-        path = pagesfile + 8;
+        fs     = &SD;
+        sdPath = "/" + String(pagesfile + 8);
+        path   = sdPath.c_str();
     }
 #endif
 

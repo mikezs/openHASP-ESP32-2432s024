@@ -932,9 +932,15 @@ void dispatch_fs(const char*, const char* payload, uint8_t source)
         const char* path = src;
 
 #if defined(ARDUINO_ARCH_ESP32) && HASP_USE_SDCARD > 0
-        if(String(src).startsWith(F("/sdcard/"))) {
-            fs   = &SD;
-            path = src + 7;
+        String sdPath((char*)0);
+        if(String(src).startsWith(F("S:/"))) {
+            fs     = &SD;
+            sdPath = "/" + String(src + 3);
+            path   = sdPath.c_str();
+        } else if(String(src).startsWith(F("/sdcard/"))) {
+            fs     = &SD;
+            sdPath = "/" + String(src + 8);
+            path   = sdPath.c_str();
         }
 #endif
 

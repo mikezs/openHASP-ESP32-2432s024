@@ -713,12 +713,15 @@ void guiTakeScreenshot(const char* pFileName)
     const char* path = pFileName;
 
 #if defined(ARDUINO_ARCH_ESP32) && HASP_USE_SDCARD > 0
+    String sdPath((char*)0);
     if(String(pFileName).startsWith(F("S:/"))) {
-        fs   = &SD;
-        path = pFileName + 3;
+        fs     = &SD;
+        sdPath = "/" + String(pFileName + 3);
+        path   = sdPath.c_str();
     } else if(String(pFileName).startsWith(F("/sdcard/"))) {
-        fs   = &SD;
-        path = pFileName + 8;
+        fs     = &SD;
+        sdPath = "/" + String(pFileName + 8);
+        path   = sdPath.c_str();
     }
 #endif
 
