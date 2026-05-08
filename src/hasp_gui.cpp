@@ -727,6 +727,7 @@ void guiTakeScreenshot(const char* pFileName)
 
     pFileOut = fs->open(path, "w");
     if(pFileOut) {
+        LOG_VERBOSE(TAG_GUI, F("File %s opened for writing"), path);
 
         size_t len = pFileOut.write(buffer, sizeof(buffer));
         if(len == sizeof(buffer)) {
@@ -741,14 +742,15 @@ void guiTakeScreenshot(const char* pFileName)
             lv_refr_now(NULL);                            /* Will call our disp_drv.disp_flush function */
             disp->driver.flush_cb = drv_display_flush_cb; /* restore callback */
 
-            LOG_VERBOSE(TAG_GUI, F("Bitmap data flushed to %s"), pFileName);
+            LOG_INFO(TAG_GUI, F("Bitmap data flushed to %s"), pFileName);
 
         } else {
-            LOG_ERROR(TAG_GUI, F("Data written does not match header size"));
+            LOG_ERROR(TAG_GUI, F("Data written (%u) does not match header size (%u)"), len, sizeof(buffer));
         }
         pFileOut.close();
 
     } else {
+        LOG_WARNING(TAG_GUI, F("Failed to open %s for writing"), path);
         LOG_WARNING(TAG_GUI, F(D_FILE_SAVE_FAILED), pFileName);
     }
 }

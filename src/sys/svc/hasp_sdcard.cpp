@@ -36,8 +36,8 @@ void sdcardSetup()
         LOG_INFO(TAG_FILE, F("SD Card    : Type: %s"),
                  (cardType == CARD_MMC) ? "MMC" : (cardType == CARD_SD) ? "SDSC" : (cardType == CARD_SDHC) ? "SDHC" : "UNKNOWN");
 
-        uint64_t cardSize = SD.cardSize() / (1024 * 1024);
-        LOG_INFO(TAG_FILE, F("SD Card    : Size: %llu MB"), cardSize);
+        uint32_t cardSize = SD.cardSize() / (1024 * 1024);
+        LOG_INFO(TAG_FILE, F("SD Card    : Size: %u MB"), cardSize);
     }
 #else
     LOG_WARNING(TAG_FILE, F("SD Card    : SD_CS not defined! (Build error?)"));

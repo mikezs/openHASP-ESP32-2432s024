@@ -1437,6 +1437,14 @@ static void handleFileList()
 
         file = root.openNextFile();
     }
+
+#if HASP_USE_SDCARD > 0
+    if(path == "/") {
+        if(output != "[") output += ',';
+        output += F("{\"type\":\"dir\",\"name\":\"sdcard\"}");
+    }
+#endif
+
     output += "]";
     webServer.send(200, PSTR("text/json"), output);
 #elif defined(ARDUINO_ARCH_ESP8266)
