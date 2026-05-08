@@ -11,6 +11,7 @@
     --download: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" id="mdi-download" width="24" height="24" viewBox="0 0 24 24"><path d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z" /></svg>');
     --upload: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" id="mdi-file-upload-outline" viewBox="0 0 24 24"><path d="M14,2L20,8V20A2,2 0 0,1 18,22H6A2,2 0 0,1 4,20V4A2,2 0 0,1 6,2H14M18,20V9H13V4H6V20H18M12,12L16,16H13.5V19H10.5V16H8L12,12Z" /></svg>');
     --flash: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" id="mdi-chip" viewBox="0 0 24 24"><path d="M6,4H18V5H21V7H18V9H21V11H18V13H21V15H18V17H21V19H18V20H6V19H3V17H6V15H3V13H6V11H3V9H6V7H3V5H6V4M11,15V18H12V15H11M13,15V18H14V15H13M15,15V18H16V15H15Z" /></svg>');
+    --sdcard: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" id="mdi-sd" viewBox="0 0 24 24"><path d="M18,8H16V4H18M15,8H13V4H15M12,8H10V4H12M18,2H10L4,8V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V4A2,2 0 0,0 18,2Z" /></svg>');
     --file: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" id="mdi-file-outline" viewBox="0 0 24 24"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" /></svg>');
     --dir: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" id="mdi-folder-outline" viewBox="0 0 24 24"><path d="M20,18H4V8H20M20,6H12L10,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V8C22,6.89 21.1,6 20,6Z" /></svg>');
     --diropen: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" id="mdi-folder-open-outline" viewBox="0 0 24 24"><path d="M6.1,10L4,18V8H21A2,2 0 0,0 19,6H12L10,4H4A2,2 0 0,0 2,6V18A2,2 0 0,0 4,20H19C19.9,20 20.7,19.4 20.9,18.5L23.2,10H6.1M19,18H6L7.6,12H20.6L19,18Z" /></svg>');
@@ -69,6 +70,7 @@
 .fa-star    { mask-image: var(--star);      -webkit-mask-image: var(--star)}
 .fa-trash   { mask-image: var(--trash);     -webkit-mask-image: var(--trask)}
 .fa-flash   { mask-image: var(--flash);     -webkit-mask-image: var(--flash)}
+.fa-sd-card { mask-image: var(--sdcard);    -webkit-mask-image: var(--sdcard)}
 .fa-file    { mask-image: var(--file);      -webkit-mask-image: var(--file)}
 .fa-dir     { mask-image: var(--dir);       -webkit-mask-image: var(--dir)}
 .fa-diropen { mask-image: var(--diropen);   -webkit-mask-image: var(--diropen)}

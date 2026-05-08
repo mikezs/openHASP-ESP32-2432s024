@@ -1187,7 +1187,7 @@ void handleFileList(AsyncWebServerRequest* request)
 #if HASP_USE_SDCARD > 0
     if((path == "/" || path.length() == 0) && fs == &HASP_FS) {
         if(output != "[") output += ',';
-        output += F("{\"type\":\"dir\",\"name\":\"sdcard\"}");
+        output += F("{\"type\":\"dir\",\"name\":\"sdcard\",\"children\":[]}");
     }
 #endif
 

@@ -1443,7 +1443,7 @@ static void handleFileList()
 #if HASP_USE_SDCARD > 0
     if(fs == &HASP_FS && (path == "/" || path.length() == 0)) {
         if(output != "[") output += ',';
-        output += F("{\"type\":\"dir\",\"name\":\"sdcard\"}");
+        output += F("{\"type\":\"dir\",\"name\":\"sdcard\",\"children\":[]}");
     }
 #endif
 

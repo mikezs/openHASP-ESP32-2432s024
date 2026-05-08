@@ -15,6 +15,10 @@
 #include "hasp_gui.h"
 #include "hasp_oobe.h"
 
+#if defined(ARDUINO_ARCH_ESP32) && HASP_USE_SDCARD > 0
+#include "SD.h"
+#endif
+
 // #include "tpcal.h"
 
 #define BACKLIGHT_CHANNEL 0 // pwm channel 0-15
@@ -712,25 +716,34 @@ void guiTakeScreenshot(const char* pFileName)
     // Reset the global File object to ensure it's in a clean state
     pFileOut = File();
 
-    fs::FS* fs       = &HASP_FS;
-    const char* path = pFileName;
     String sdPath((char*)0);
+    const char* path = pFileName;
+    bool is_sd       = false;
 
 #if defined(ARDUINO_ARCH_ESP32) && HASP_USE_SDCARD > 0
     if(String(pFileName).startsWith(F("S:/"))) {
-        fs     = &SD;
+        is_sd  = true;
         sdPath = "/" + String(pFileName + 3);
         path   = sdPath.c_str();
     } else if(String(pFileName).startsWith(F("/sdcard/"))) {
-        fs     = &SD;
+        is_sd  = true;
         sdPath = "/" + String(pFileName + 8);
         path   = sdPath.c_str();
     }
 #endif
 
-    LOG_INFO(TAG_GUI, F("Taking screenshot to %s on %s"), path, (fs == &HASP_FS) ? "Flash" : "SD");
+    LOG_INFO(TAG_GUI, F("Taking screenshot to %s on %s"), path, is_sd ? "SD" : "Flash");
 
-    pFileOut = fs->open(path, FILE_WRITE);
+#if defined(ARDUINO_ARCH_ESP32) && HASP_USE_SDCARD > 0
+    if(is_sd) {
+        pFileOut = SD.open(path, FILE_WRITE);
+    } else {
+        pFileOut = HASP_FS.open(path, FILE_WRITE);
+    }
+#else
+    pFileOut = HASP_FS.open(path, FILE_WRITE);
+#endif
+
     if(pFileOut) {
         LOG_INFO(TAG_GUI, F("File %s opened for writing"), path);
 
